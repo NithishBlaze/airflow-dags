@@ -1,0 +1,58 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    restart: always
+
+  airflow-webserver:
+    image: apache/airflow:3.0.0
+    container_name: airflow-webserver
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+    command: webserver
+    restart: always
+
+  airflow-scheduler:
+    image: apache/airflow:3.0.0
+    container_name: airflow-scheduler
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    volumes:
+      - ./dags:/opt/airflow/dags
+    command: scheduler
+    restart: always
+
+  git-sync:
+    image: k8s.gcr.io/git-sync/git-sync:v3.6.6
+    container_name: git-sync
+    environment:
+      - GIT_SYNC_REPO=${GIT_REPO}
+      - GIT_SYNC_BRANCH=${GIT_BRANCH}
+      - GIT_SYNC_ROOT=/git
+      - GIT_SYNC_DEST=repo
+      - GIT_SYNC_WAIT=${GIT_SYNC_INTERVAL}
+      - GIT_SYNC_ONE_TIME=false
+    volumes:
+      - ./dags:/git/repo
+    restart: always
+
+volumes:
+  postgres-db-volume:
