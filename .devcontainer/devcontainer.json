@@ -1,0 +1,17 @@
+{
+    "name": "Airflow Dev",
+    "build": {
+      "dockerfile": "Dockerfile"
+    },
+    "runArgs": ["--privileged"],
+    "forwardPorts": [8080],
+    "postCreateCommand": "docker-compose up -d",
+    "customizations": {
+      "vscode": {
+        "settings": {
+          "terminal.integrated.defaultProfile.linux": "bash"
+        }
+      }
+    }
+  }
+  
